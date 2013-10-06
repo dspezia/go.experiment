@@ -121,14 +121,9 @@ func (lo *LockArea) RemoveClient(clt Replier) []Replier {
 		} else {
 			// This was only a lock intent, but it has to be removed
 			l := lo.locks[name]
-			for e := l.Front(); e != nil; {
-				next := e.Next()
-				c := e.Value.(Replier)
-				if c == clt {
-					l.Remove(e)
-				}
-				e = next
-			}
+			FilterOut(l, func(e *list.Element) bool {
+				return e.Value.(Replier) == clt
+			})
 			if l.Front() == nil {
 				delete(lo.locks, name)
 			}
@@ -137,6 +132,20 @@ func (lo *LockArea) RemoveClient(clt Replier) []Replier {
 
 	delete(lo.clients, clt)
 	return res
+}
+
+/*****************************************************************************/
+
+// FilterOut remove from a list all items whose predicate result is true
+func FilterOut(l *list.List, pred func(e *list.Element) bool) {
+
+	for e := l.Front(); e != nil; {
+		next := e.Next()
+		if pred(e) {
+			l.Remove(e)
+		}
+		e = next
+	}
 }
 
 /*****************************************************************************/
