@@ -13,7 +13,7 @@ func (*clt) Reply(r *MessageReply) {}
 
 /*****************************************************************************/
 
-func Test1(t *testing.T) {
+func TestLockArea(t *testing.T) {
 
 	la := NewLockArea()
 

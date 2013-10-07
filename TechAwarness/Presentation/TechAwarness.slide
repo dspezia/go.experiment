@@ -1,0 +1,415 @@
+A critical overview of the Go programming language
+
+TechAwarness - OCT 2013
+
+Didier Spezia
+Amadeus R&D
+AQG/QLM
+
+* Agenda
+
+Introduction and purpose
+
+General presentation
+
+- Syntax and basics
+- Type system
+- Concurrency
+
+Tools and implementation
+
+Live demo
+
+* Introduction and purpose
+
+* Origin of the language
+
+.image TechAwarness/Go_origin.svg
+
+* Problems to be solved
+
+Large scale *applications*:
+
+- Huge compilation time, dependencies _(C/C++_include)_.
+- Complex object oriented frameworks _(Java)_.
+- Code bloat results in lack of operational agility _(start/stop_times)_.
+- Distributed computing is a necessity.
+
+Large development *teams*:
+
+- Thousands of developers sharing the same code base.
+- Heterogeneous backgrounds/levels of developers.
+
+Expensive development *processes*:
+
+- Code refactoring too expensive.
+- Lack of automation to manage source code.
+
+* Go philosophy
+
+A language designed for large scale software engineering.
+
+- *Minimalistic* language (clean syntax, keep it simple).
+
+- A right balance between *safety* and *control*
+
+- Built-in *concurrency* support.
+
+- Minimize software coupling
+*Toolboxes* should be preferred to frameworks.
+Composition should be preferred to inheritance.
+
+- Short *compilation*time* is a feature.
+
+- *Tooling* is not an option.
+
+- *Conventions* are effective (when they are enforced by the language or the toolset).
+
+
+* Syntax and basics
+
+* Removing things from C
+- No pre-processor
+- No semi-colons
+- No parenthesis after if/for/switch, braces mandatory
+- No comma operator `i=j,a=b`
+- No ternary conditional operator `(A>B)?"ok":"ko"`
+- No ++ or -- expressions (they are statements)
+- No unions, no bitfields
+- No pointer arithmetic, no -> operator
+- No do { ... } while ( ... ) loop
+- No while ( ... ) { ... } loop
+- No implicit type conversion between variables
+- No const variables
+
+* Example
+
+.play TechAwarness/Example1.go
+
+* Numerical types
+
+  uint8       the set of all unsigned  8-bit integers
+  uint16      the set of all unsigned 16-bit integers
+  uint32      the set of all unsigned 32-bit integers
+  uint64      the set of all unsigned 64-bit integers
+
+  int8        the set of all signed  8-bit integers
+  int16       the set of all signed 16-bit integers
+  int32       the set of all signed 32-bit integers
+  int64       the set of all signed 64-bit integers
+
+  float32     the set of all IEEE-754 32-bit floating-point numbers
+  float64     the set of all IEEE-754 64-bit floating-point numbers
+
+  complex64   complex numbers with float32 real and imaginary parts
+  complex128  complex numbers with float64 real and imaginary parts
+
+  byte        alias for uint8
+  rune        alias for int32
+
+  ... and plaftorm dependent stuff (sigh !)
+  uint        either 32 or 64 bits
+  int         same size as uint
+  uintptr     an unsigned integer large enough to store a pointer value
+
+* More types
+
+- Immutable strings
+
+   var s string
+   s = "toto"
+   x := s + " " + s
+
+- Booleans
+
+   var done bool
+   done = true
+   if done {
+      fmt.Println("done")
+   } 
+
+- Mutable arrays
+
+   var t [32]int64
+   t[0] = 2   // with bound checks
+
+* More advanced types
+
+- Slices: reference on a part of an array = struct { ptr, len, cap }
+.play TechAwarness/Example2.go /BEGIN OMIT/,/END OMIT/
+
+- Maps (associative arrays)
+.play TechAwarness/Example3.go /BEGIN OMIT/,/END OMIT/
+
+- Pointers
+   var x int
+   var p *int = &x
+   var p1,p2,p3 *int
+
+* Variable declaration
+
+- PASCAL style for declarations
+   // type is AFTER the variable
+   var x int
+   // map associating strings to slices of pointers to ints
+   var x map[string][]*int
+
+- Type inference
+
+   var f1 = 23.89   // f1 will be a float64
+   f2 := f1         // f2 will have the same type as f1
+   m := map[string]int{ "didier":0, "stephane":1 }
+   s := []string{ "toto", "titi", "tutu" }
+
+- Stack or heap: it does not matter
+The compiler chooses if variables are stack or heap allocated (escape analysis).
+Heap allocated variable are garbage collected.
+In Go, it is valid to return a pointer on a local variable.
+
+* Statements (1)
+
+- Multiple assignments
+   i,j = j,i
+
+- If statements can include variable declaration
+.code TechAwarness/Example4.go /B1 OMIT/,/E1 OMIT/
+
+- For is the unique loop in golang
+.code TechAwarness/Example4.go /B2 OMIT/,/E2 OMIT/
+
+* Statements (2)
+
+- Switch is more flexible
+.code TechAwarness/Example4.go /B3 OMIT/,/E3 OMIT/
+
+* Functions
+
+- Parameters always passed by value
+Use a pointer if you need to modify back a parameter.
+
+- Functions can return multiple values
+.code TechAwarness/Example4.go /B5 OMIT/,/E5 OMIT/
+
+- Closures: function are first-class objects
+.code TechAwarness/Example4.go /B6 OMIT/,/E6 OMIT/
+
+* Defer and error management
+
+- Defer clause replaces RAII idiom
+Scope is the function, not the block.
+
+- Error management done by checking return codes
+   //func Open(name string) (file *File, err error)
+   f, err := os.Open("filename.ext")
+   if err != nil {
+       log.Fatal(err)
+   }
+   defer f.Close()
+   // do something with the open *File f
+
+- No exceptions, but a panic/recover mechanism
+   "Exceptions must remain exceptional."
+
+* Code organization
+
+- Code must be split by packages (hierarchy possible)
+
+- Import clause only read the object file of the corresponding packages.
+  The metadata defining the public interface of the package are encoded in the object file.
+  The compiler never has to parse the source code of an imported package (only object file).
+  The compiler never has to access the dependencies of an imported package. 
+
+- A package can be implemented in several files (a package = a directory).
+
+- Package concept compatible with remote code repositories.
+Similar to Ruby gem, Node.js npm, Python pip. 
+Git, Subversion, Bazaar, Mercurial are supported.
+
+   Github
+   Launchpad
+   Google Code Project Hosting
+   Bitbucket
+
+* Type system
+
+* Type and methods
+
+- Methods
+.code TechAwarness/Example5.go /B1 OMIT/,/E1 OMIT/
+
+- Methods can be attached to any type
+.code TechAwarness/Example5.go /B2 OMIT/,/E2 OMIT/
+
+* Composition
+
+No inheritance in Go, but struct can be composed.
+Automatic delegation.
+
+.code TechAwarness/Example6.go /B1 OMIT/,/E1 OMIT/
+
+* Composition
+.play TechAwarness/Example6.go /B2 OMIT/,/E2 OMIT/
+  
+* Interface (1)
+
+Interfaces are abstract, other types are concrete.
+An interface is defined by a method set:
+
+.code TechAwarness/Example5.go /B3 OMIT/,/E3 OMIT/
+
+Defining interfaces with just one or two methods is common.
+Types do not have to declare that they implements a given interface.
+They just have to implement the corresponding methods.
+
+* Interface (2)
+
+Interfaces are used to decouple software and implement polymorphism.
+
+Example of dynamic dispatching:
+
+    func copy( r Reader, w Writer ) {
+       b := make([]byte, 1024)
+       n := r.read(buf)
+       r.write(buf[0:n])
+    }
+	
+   reader := Socket( .... )   // Socket implements Reader
+   writer := File( .... )     // File implements Writer
+   copy(reader,writer)
+
+No hierarchy.
+Interfaces can be introduced ad-hoc while refactoring the code.
+"Post-Facto" abstraction mechanism.
+
+* Concurrency
+
+* Generalities
+
+Concurrency and parallelism are two different concepts:
+
+- Concurrency is about taking care of several tasks at the same time.
+- Parallelism is about executing code in parallel.
+
+Example: a bartender can prepare one beverage at a time, and can look after several customers at the same time.
+=> A bartender supports concurrency without parallelism.
+
+In Go, developers are supposed to take care of concurrency.
+The Go runtime will take care of parallelism.
+
+* Goroutines
+
+A goroutine is a concurrent task (not a thread, not a coroutine).
+Very similar to Erlang processes.
+
+.play TechAwarness/Example7.go /B1 OMIT/,/E1 OMIT/
+
+Thanks to the segmented stack mechanism, many goroutines can be spawned.
+C calls, system calls never block the Go scheduler (or other goroutines).
+All socket/pipe activity is automatically multiplexed.
+
+* Channel
+
+A channel is a synchronization object with a payload.
+It is a first class object of the language.
+
+.play TechAwarness/Example8.go /B1 OMIT/,/E1 OMIT/
+
+* More on channels
+
+It is possible to wait on several channels.
+
+.code TechAwarness/Example8.go /B2 OMIT/,/E2 OMIT/
+
+A channel can be buffered or unbuffered.
+
+- Unbuffered: blocking, good for deterministic synchronization
+- Buffered: non blocking, good to implement shared queues and pools
+
+A Go program can be decomposed in a mesh of goroutines exchanging messages.
+
+Do not share memory to communicate.
+Instead communicate to share information.	
+
+* Tools and implementation
+
+* Implementations
+
+Two implementation are availble:
+
+- Reference implementation, based on Plan 9 toolchain.
+
+- A GCC front-end (bundled with GCC)
+
+IMO, the reference implementation is better.
+
+- faster (compilation time)
+- better integrated with the runtime
+- easier to hack into
+But it supports less targets (x86, x86_64, ARM)
+
+* Tooling (1)
+
+The reference implementation comes with:
+
+- a binary toolchain (linker, nm, objdump, etc ...)
+- an assembler
+- a little C compiler
+- a Go compiler
+- a compilation automation mechanism
+- a package management tool
+- a CPU profiler
+- a memory profiler
+- a race condition detector
+
+* Tooling (2)
+
+- a documentation tool (godoc)
+- a code formatter (fmt)
+- a code refactoring tool (gofix)
+- a lint-like code validation tool (vet)
+- a query mechanism for Go source code (oracle, Go 1.2)
+
+Example: live documentation tool
+
+.link http://localhost:10003/pkg/github.com/dspezia/go.experiment/TechAwarness/lockserver/ godoc
+
+* Live demo
+
+* What I want to do
+
+A little NoSQL locking and statistics server.
+
+- pessimistic and blocking LOCK/UNLOCK commands
+- atomic GET/SET/INCR commands to maintain statistics
+- JSON protocol
+- support of pipelining (especially for GET/SET/INCR)
+- resilient to client disconnection/crash
+
+Message examples:
+
+   `{"Op":"incr", "Target":"counter", "Arg":"1"}`
+   `{"Op":"get", "Target":"counter"}`
+   `{"Op":"lock", "Target":"AF11"}`
+   `{"Op":"unlock", "Target":"AF11"}`
+
+* My first idea ...
+
+- 1 goroutine per TCP connection
+- 1 core goroutine to maintain the state of the server
+
+.image TechAwarness/Go_first.svg
+
+* Finally ...
+
+- 2 goroutines per TCP connection (traffic in, traffic out)
+- 1 core goroutine to maintain the state of the server
+
+.image TechAwarness/Go_final.svg
+
+* Some links
+
+Resources
+
+- Go homepage [[http://golang.org]]
+- Go interactive tour [[http://tour.golang.org]]
+- Go philosophy [[http://talks.golang.org/2012/splash.article]]

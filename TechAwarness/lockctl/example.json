@@ -1,0 +1,10 @@
+
+{"Op":"set", "Target":"counter", "Arg":"0"}
+
+{"Op":"incr", "Target":"counter", "Arg":"1"}
+
+{"Op":"get", "Target":"counter"}
+
+{"Op":"lock", "Target":"AF11"}
+
+{"Op":"unlock", "Target":"AF11"}
