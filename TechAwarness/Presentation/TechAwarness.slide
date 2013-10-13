@@ -57,7 +57,7 @@ A language designed for large scale software engineering.
 
 - Minimize software coupling
 *Toolboxes* should be preferred to frameworks.
-Composition should be preferred to inheritance.
+*Composition* should be preferred to inheritance.
 
 - Short *compilation*time* is a feature.
 
@@ -116,7 +116,7 @@ Composition should be preferred to inheritance.
 
 - Immutable strings
 
-   var s string
+   var s string        // Can be iterated by UTF-8 characters
    s = "toto"
    x := s + " " + s
 
@@ -131,9 +131,9 @@ Composition should be preferred to inheritance.
 - Mutable arrays
 
    var t [32]int64
-   t[0] = 2   // with bound checks
+   t[0] = 2            // with bound checks
 
-* More advanced types
+* More advanced types (1)
 
 - Slices: reference on a part of an array = struct { ptr, len, cap }
 .play TechAwarness/Example2.go /BEGIN OMIT/,/END OMIT/
@@ -141,10 +141,33 @@ Composition should be preferred to inheritance.
 - Maps (associative arrays)
 .play TechAwarness/Example3.go /BEGIN OMIT/,/END OMIT/
 
-- Pointers
+- Explicit initialization
+
+  s := make([]int,0,16)        // Empty slice, initial capacity of 16 int
+  m := make( map[string]int )
+
+* More advanced types (2)
+
+- Anonymous struct
+
+  // 3D coordinates variable
+  var coord struct{ x,y,z float64 }
+
+  // Litteral value of a list of 3D coordinates
+  list_coord := []struct{x,y,z float64}{ {0,0,0}, {1,2,3}, {4,5,6} }
+
+- Pointers (safer than in C/C++)
+
    var x int
    var p *int = &x
    var p1,p2,p3 *int
+
+   // Dynamic allocations
+   p1 = new(int)          
+   ptr := & struct{x,y,z float64}{ 1,2,3 }
+   fmt.Println( ptr.x, ptr.y, ptr.z )
+
+Garbage collector.
 
 * Variable declaration
 
@@ -240,10 +263,10 @@ Git, Subversion, Bazaar, Mercurial are supported.
 - Methods can be attached to any type
 .code TechAwarness/Example5.go /B2 OMIT/,/E2 OMIT/
 
-* Composition
+* Composition and delegation
 
-No inheritance in Go, but struct can be composed.
-Automatic delegation.
+No class, no inheritance, no method overloading or overriding
+Instead: structure composition and field/method delegation
 
 .code TechAwarness/Example6.go /B1 OMIT/,/E1 OMIT/
 

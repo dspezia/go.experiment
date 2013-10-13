@@ -14,15 +14,15 @@ func (self *Widget) Move(x, y int) {
 }
 
 type Label struct {
-	Widget
-	Text string
+	Widget // Composition: has-a relationship
+	Text   string
 }
 
 // E1 OMIT
 
 // B2 OMIT
 type Button struct {
-	Label
+	Label // Another composition
 	state bool
 }
 
@@ -31,14 +31,14 @@ func NewButton(x, y int, t string) *Button {
 }
 
 func (self *Button) PrintCoord() {
-	fmt.Println(self.X, self.Y)
+	fmt.Println("Widget coord = ", self.X, self.Y) // Field delegation
 }
 
 func main() {
 	b := NewButton(10, 10, "Toto")
-	fmt.Println(b)
-	b.Move(20, 20)
-	fmt.Println(b)
+	fmt.Println("Before move:", *b)
+	b.Move(20, 20) // Method delegation
+	fmt.Println("After move:", *b)
 	b.PrintCoord()
 }
 

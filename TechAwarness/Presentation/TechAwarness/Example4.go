@@ -40,7 +40,7 @@ func main() {
 	x := 2
 
 	// B3 OMIT
-	// No break clause needed
+	// No break clause needed, no integral type required
 	switch x {
 	case 3, 4:
 		fmt.Println("3 or 4")
