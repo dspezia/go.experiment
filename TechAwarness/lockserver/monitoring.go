@@ -4,11 +4,17 @@ import "log"
 import "net/http"
 import "code.google.com/p/go.net/websocket"
 import "time"
+import "sync/atomic"
+
+/*****************************************************************************/
 
 type ResultJson struct {
-	Duration int
-	Tps      int
+	Tps int64
 }
+
+var Counter *int64
+
+/*****************************************************************************/
 
 func MonitoringServer(ws *websocket.Conn) {
 
@@ -16,13 +22,16 @@ func MonitoringServer(ws *websocket.Conn) {
 
 	done := make(chan bool)
 	go func() {
+		cnt := atomic.LoadInt64(Counter)
 		for {
 			select {
 			case <-done:
 				return
 			case <-time.After(time.Second / 2):
-				m := ResultJson{Duration: 1, Tps: time.Now().Nanosecond() / 1000000}
-				err := websocket.JSON.Send(ws, m)
+				cur := atomic.LoadInt64(Counter)
+				delta := 2 * (cur - cnt)
+				cnt = cur
+				err := websocket.JSON.Send(ws, ResultJson{Tps: delta})
 				if err != nil {
 					log.Println("Error send", err)
 					return
@@ -42,7 +51,12 @@ func MonitoringServer(ws *websocket.Conn) {
 	log.Println("Disconnected")
 }
 
-func monitoringServer() {
+/*****************************************************************************/
+
+func monitoringServer(core *Core) {
+	Counter = &core.count
 	http.Handle("/monitoring", websocket.Handler(MonitoringServer))
 	http.ListenAndServe(":4010", nil)
 }
+
+/*****************************************************************************/

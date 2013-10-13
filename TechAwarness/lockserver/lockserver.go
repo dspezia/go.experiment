@@ -6,8 +6,8 @@ import "io"
 import "encoding/json"
 import "os"
 import "strconv"
-
 import "os/signal"
+import "sync/atomic"
 
 /*****************************************************************************/
 
@@ -47,7 +47,7 @@ type MessageQuery struct {
 	Target string
 	Arg    string `json:",omitempty"`
 	oper   Operation
-	clt    *Client
+	clt    Replier
 }
 
 // MessageReply is the reply message structure.
@@ -186,6 +186,7 @@ type Core struct {
 	in    chan *MessageQuery // Incoming channel
 	locks *LockArea          // Lock management data structure
 	stats map[string]int64   // Key/value data structure
+	count int64              // Command counter
 }
 
 /*****************************************************************************/
@@ -226,6 +227,7 @@ func (core *Core) main() {
 		default:
 			m.clt.Reply(&MessageReply{Status: "KO", Error: "Unknown operation"})
 		}
+		atomic.AddInt64(&core.count, 1)
 	}
 }
 
@@ -375,7 +377,7 @@ func MainServer(server string) {
 	go lis.Listen("tcp", server)
 
 	// Register monitoring server
-	go monitoringServer()
+	go monitoringServer(core)
 
 	// Setup SIGINT signal handler, and wait
 	channel := make(chan os.Signal)
