@@ -1,0 +1,44 @@
+
+    <script type="text/javascript" src="TechAwarness/smoothie.js"></script>
+    <script type="text/javascript">
+	
+      var ts = new TimeSeries();
+      var chart = new SmoothieChart({minValue:0});
+	  var w 
+	
+	
+      function startTimeline() {		
+        chart.addTimeSeries(ts, { strokeStyle: 'rgba(0, 255, 0, 1)', fillStyle: 'rgba(0, 255, 0, 0.2)', lineWidth: 4 });
+        chart.streamTo(document.getElementById("chart"), 500);
+		w = new WebSocket("ws://localhost:4010/monitoring")		
+		w.onopen = function() {
+			document.getElementById("throughput").innerHTML = "Starting"
+		}
+		w.onmessage = function(evt) {
+			obj = JSON.parse(evt.data)
+			document.getElementById("throughput").innerHTML = obj.Tps
+            ts.append(new Date().getTime(), obj.Tps);
+		}
+		w.onerror = function(evt) {
+			document.getElementById("throughput").innerHTML = "ERROR"
+		}
+      }
+	
+      function stopTimeline() {		
+		 w.close()
+		 chart.removeTimeSeries(ts)
+         chart.stop()
+      }
+	 
+    </script>
+
+	<center>
+	<br>
+	<br>
+	<canvas id="chart" width="600" height="400"></canvas>
+	<br>
+	<div id="throughput"> Throughput </div>
+	<br>
+	<button onclick="startTimeline();">Start</button>
+	<button onclick="stopTimeline();">Stop</button>	
+	</center>

@@ -374,6 +374,9 @@ func MainServer(server string) {
 	lis := &Listener{core: core}
 	go lis.Listen("tcp", server)
 
+	// Register monitoring server
+	go monitoringServer()
+
 	// Setup SIGINT signal handler, and wait
 	channel := make(chan os.Signal)
 	signal.Notify(channel, os.Interrupt)
