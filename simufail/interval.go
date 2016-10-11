@@ -1,5 +1,9 @@
 package main
 
+import (
+	"math/rand"
+)
+
 // MAXSECS is the maximum number of seconds in a year
 const MAXSECS = 365 * 24 * 3600
 
@@ -55,6 +59,17 @@ func (s Intervals) CheckCollision(x Interval) bool {
 		}
 	}
 	return false
+}
+
+// AddFailures adds multiple failures
+func (s *Intervals) AddFailures(n int, r *rand.Rand, mttr uint32) {
+	for n > 0 {
+		t := uint32(r.Int31n(MAXSECS))
+		if !s.AddFailure(t, mttr, true) {
+			continue
+		}
+		n--
+	}
 }
 
 // Implements sort interface

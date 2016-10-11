@@ -2,6 +2,7 @@ package main
 
 import (
 	"math"
+	"math/rand"
 	"sort"
 	"testing"
 )
@@ -83,5 +84,14 @@ func TestIntervals(t *testing.T) {
 	last := col[len(col)-1]
 	if last.end != MAXSECS {
 		t.Errorf("Expected %d, got %d for %v", MAXSECS, last.end, last)
+	}
+}
+
+func TestMutipleFailures(t *testing.T) {
+	r := rand.New(rand.NewSource(0))
+	col := Intervals{}
+	col.AddFailures(10, r, 100)
+	if len(col) != 10 {
+		t.Errorf("Expected %d, got %d", 10, len(col))
 	}
 }
