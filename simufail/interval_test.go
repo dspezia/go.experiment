@@ -48,6 +48,28 @@ func TestContiguous(t *testing.T) {
 	}
 }
 
+func TestInclude(t *testing.T) {
+	tests := []struct {
+		a        Interval
+		b        uint32
+		expected bool
+	}{
+		{Interval{beg: 10, end: 20}, 1, false},
+		{Interval{beg: 10, end: 20}, 9, false},
+		{Interval{beg: 10, end: 20}, 10, true},
+		{Interval{beg: 10, end: 20}, 15, true},
+		{Interval{beg: 10, end: 20}, 20, true},
+		{Interval{beg: 10, end: 20}, 21, false},
+		{Interval{beg: 10, end: 20}, 30, false},
+	}
+
+	for _, x := range tests {
+		if b := x.a.Include(x.b); b != x.expected {
+			t.Errorf("Expected %t, got %t for %v %v", x.expected, b, x.a, x.b)
+		}
+	}
+}
+
 func TestIntervals(t *testing.T) {
 	tests := []struct {
 		t, mttr  uint32
@@ -64,6 +86,8 @@ func TestIntervals(t *testing.T) {
 		{800, math.MaxInt32, 6, true},
 		{750, 100, 6, false},
 	}
+
+	// Check AddFailure
 	col := Intervals{}
 	for _, x := range tests {
 		if b := col.AddFailure(x.t, x.mttr, true); b != x.expected {
@@ -73,6 +97,8 @@ func TestIntervals(t *testing.T) {
 			t.Errorf("Expected %d, got %d for %v", x.size, len(col), x)
 		}
 	}
+
+	// Check sorting
 	sort.Sort(col)
 	prev := col[0]
 	for _, x := range col[1:] {
@@ -85,6 +111,25 @@ func TestIntervals(t *testing.T) {
 	if last.end != MAXSECS {
 		t.Errorf("Expected %d, got %d for %v", MAXSECS, last.end, last)
 	}
+
+	// Check time collision
+	ttests := []struct {
+		t        uint32
+		expected bool
+	}{
+		{1, true},
+		{100, true},
+		{101, false},
+		{125, true},
+		{475, false},
+		{550, true},
+		{900, true},
+	}
+	for _, x := range ttests {
+		if b := col.CheckCollisionTime(x.t); b != x.expected {
+			t.Errorf("Expected %t, got %t for %v", x.expected, b, x)
+		}
+	}
 }
 
 func TestMutipleFailures(t *testing.T) {
@@ -93,5 +138,18 @@ func TestMutipleFailures(t *testing.T) {
 	col.AddFailures(10, r, 100)
 	if len(col) != 10 {
 		t.Errorf("Expected %d, got %d", 10, len(col))
+	}
+}
+
+func TestFindNonFailureTime(t *testing.T) {
+	r := rand.New(rand.NewSource(0))
+	col := Intervals{}
+	col.AddFailures(20, r, 3600)
+	sort.Sort(col)
+	for i := 0; i < 100; i++ {
+		ts := col.FindNonFailureTime(r)
+		if col.CheckCollisionTime(ts) {
+			t.Errorf("Got unexpected collision for %v", ts)
+		}
 	}
 }
