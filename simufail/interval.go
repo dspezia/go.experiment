@@ -2,6 +2,7 @@ package main
 
 import (
 	"math/rand"
+	"sort"
 )
 
 // MAXSECS is the maximum number of seconds in a year.
@@ -95,6 +96,49 @@ func (s Intervals) FindNonFailureTime(r *rand.Rand) uint32 {
 			return t
 		}
 	}
+}
+
+// Normalize puts the list of intervals in canonical form
+func (sp *Intervals) Normalize() {
+
+	s := *sp
+
+	// Sort intervals
+	if len(s) == 0 {
+		return
+	}
+	sort.Sort(s)
+
+	// Merge contiguous or overlapping intervals
+	for i := 1; i < len(s); {
+		if s[i].Overlap(s[i-1]) {
+			if s[i-1].end < s[i].end {
+				s[i-1].end = s[i].end
+			}
+			s = append(s[:i], s[i+1:]...)
+			continue
+		}
+		if s[i].Contiguous(s[i-1]) {
+			s[i-1].end = s[i].end
+			s = append(s[:i], s[i+1:]...)
+			continue
+		}
+		i++
+	}
+	*sp = s
+}
+
+// Equal returns true if the two objects are identical
+func (s Intervals) Equal(other Intervals) bool {
+	if len(s) != len(other) {
+		return false
+	}
+	for i := 0; i < len(s); i++ {
+		if s[i] != other[i] {
+			return false
+		}
+	}
+	return true
 }
 
 // Implements sort interface.

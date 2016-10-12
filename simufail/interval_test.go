@@ -132,7 +132,7 @@ func TestIntervals(t *testing.T) {
 	}
 }
 
-func TestMutipleFailures(t *testing.T) {
+func TestMultipleFailures(t *testing.T) {
 	r := rand.New(rand.NewSource(0))
 	col := Intervals{}
 	col.AddFailures(10, r, 100)
@@ -150,6 +150,40 @@ func TestFindNonFailureTime(t *testing.T) {
 		ts := col.FindNonFailureTime(r)
 		if col.CheckCollisionTime(ts) {
 			t.Errorf("Got unexpected collision for %v", ts)
+		}
+	}
+}
+
+func TestNormalize(t *testing.T) {
+	tests := []struct {
+		in       Intervals
+		expected Intervals
+	}{
+		{
+			Intervals{Interval{beg: 1, end: 10}, Interval{beg: 20, end: 30}},
+			Intervals{Interval{beg: 1, end: 10}, Interval{beg: 20, end: 30}},
+		},
+		{
+			Intervals{Interval{beg: 1, end: 10}, Interval{beg: 10, end: 30}},
+			Intervals{Interval{beg: 1, end: 30}},
+		},
+		{
+			Intervals{Interval{beg: 1, end: 10}, Interval{beg: 5, end: 15}, Interval{beg: 14, end: 20}},
+			Intervals{Interval{beg: 1, end: 20}},
+		},
+		{
+			Intervals{Interval{beg: 1, end: 10}, Interval{beg: 15, end: 25}, Interval{beg: 25, end: 30}, Interval{beg: 30, end: 40}, Interval{beg: 60, end: 100}},
+			Intervals{Interval{beg: 1, end: 10}, Interval{beg: 15, end: 40}, Interval{beg: 60, end: 100}},
+		},
+		{
+			Intervals{Interval{beg: 25, end: 32}, Interval{beg: 15, end: 25}, Interval{beg: 1, end: 10}, Interval{beg: 50, end: 60}, Interval{beg: 30, end: 40}},
+			Intervals{Interval{beg: 1, end: 10}, Interval{beg: 15, end: 40}, Interval{beg: 50, end: 60}},
+		},
+	}
+	for _, x := range tests {
+		x.in.Normalize()
+		if !x.in.Equal(x.expected) {
+			t.Errorf("Expected %v, got %v", x.expected, x.in)
 		}
 	}
 }
