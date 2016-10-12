@@ -7,7 +7,7 @@ import (
 )
 
 func BenchmarkAvailAlloc(b *testing.B) {
-	ay := NewAvailabilityYear(9, 3)
+	ay := NewAvailabilityYear()
 	for n := 0; n < b.N; n++ {
 		ay.Reset()
 		for i := 0; i < len(ay.nodes); i++ {
@@ -20,7 +20,7 @@ func BenchmarkAvailAlloc(b *testing.B) {
 }
 
 func BenchmarkFailures(b *testing.B) {
-	ay := NewAvailabilityYear(9, 3)
+	ay := NewAvailabilityYear()
 	r := rand.New(rand.NewSource(0))
 	for n := 0; n < b.N; n++ {
 		ay.Reset()
@@ -28,5 +28,14 @@ func BenchmarkFailures(b *testing.B) {
 			ay.nodes[i].AddFailures(3, r, 600)
 			sort.Sort(ay.nodes[i])
 		}
+	}
+}
+
+func BenchmarkBuild(b *testing.B) {
+	ay := NewAvailabilityYear()
+	r := rand.New(rand.NewSource(0))
+	for n := 0; n < b.N; n++ {
+		ay.Reset()
+		ay.Build(r)
 	}
 }
