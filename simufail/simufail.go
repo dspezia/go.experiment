@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"math/rand"
 )
 
 var flagNbIter = flag.Int("n", 10000, "Number of iterations")
@@ -18,6 +19,14 @@ func NewSimulation() *Simulation {
 
 func (s *Simulation) RunOnce() {
 
+	ay := NewAvailabilityYear()
+	r := rand.New(rand.NewSource(0))
+	for i := 0; i < 10; i++ {
+		fmt.Println("---------------")
+		ay.Reset()
+		ay.Build(r)
+		ay.Simulate()
+	}
 }
 
 func main() {

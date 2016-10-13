@@ -1,9 +1,11 @@
 package main
 
 import (
+	"fmt"
 	"math"
 	"math/rand"
 	"sort"
+	"strings"
 	"testing"
 )
 
@@ -154,36 +156,59 @@ func TestFindNonFailureTime(t *testing.T) {
 	}
 }
 
+func parseIntervals(s string) Intervals {
+	out := Intervals{}
+	for _, x := range strings.Fields(s) {
+		var val Interval
+		fmt.Sscanf(x, "%d,%d,%d,%f", &val.beg, &val.end, &val.cnt, &val.ratio)
+		out = append(out, val)
+	}
+	return out
+}
+
 func TestNormalize(t *testing.T) {
 	tests := []struct {
-		in       Intervals
-		expected Intervals
+		in, expected string
 	}{
-		{
-			Intervals{Interval{beg: 1, end: 10}, Interval{beg: 20, end: 30}},
-			Intervals{Interval{beg: 1, end: 10}, Interval{beg: 20, end: 30}},
-		},
-		{
-			Intervals{Interval{beg: 1, end: 10}, Interval{beg: 10, end: 30}},
-			Intervals{Interval{beg: 1, end: 30}},
-		},
-		{
-			Intervals{Interval{beg: 1, end: 10}, Interval{beg: 5, end: 15}, Interval{beg: 14, end: 20}},
-			Intervals{Interval{beg: 1, end: 20}},
-		},
-		{
-			Intervals{Interval{beg: 1, end: 10}, Interval{beg: 15, end: 25}, Interval{beg: 25, end: 30}, Interval{beg: 30, end: 40}, Interval{beg: 60, end: 100}},
-			Intervals{Interval{beg: 1, end: 10}, Interval{beg: 15, end: 40}, Interval{beg: 60, end: 100}},
-		},
-		{
-			Intervals{Interval{beg: 25, end: 32}, Interval{beg: 15, end: 25}, Interval{beg: 1, end: 10}, Interval{beg: 50, end: 60}, Interval{beg: 30, end: 40}},
-			Intervals{Interval{beg: 1, end: 10}, Interval{beg: 15, end: 40}, Interval{beg: 50, end: 60}},
-		},
+		{"", "[]"},
+		{"1,10 20,30", "[{1 10 0 0} {20 30 0 0}]"},
+		{"1,10 10,30", "[{1 30 0 0}]"},
+		{"1,10 5,15 14,20", "[{1 20 0 0}]"},
+		{"1,10 15,25 25,30 30,40 60,100", "[{1 10 0 0} {15 40 0 0} {60 100 0 0}]"},
+		{"25,32 15,25 1,10 50,60 30,40", "[{1 10 0 0} {15 40 0 0} {50 60 0 0}]"},
+		{"10,20 9,21 8,22 22,30 22,40 1,10", "[{1 40 0 0}]"},
 	}
 	for _, x := range tests {
-		x.in.Normalize()
-		if !x.in.Equal(x.expected) {
-			t.Errorf("Expected %v, got %v", x.expected, x.in)
+		in := parseIntervals(x.in)
+		in.Normalize(false)
+		out := fmt.Sprintf("%v", in)
+		if out != x.expected {
+			t.Errorf("Expected %v, got %v", x.expected, out)
+		}
+	}
+}
+
+func TestMergeNodes(t *testing.T) {
+	tests := []struct {
+		a, b, expected string
+	}{
+		{"", "1,10,1,0.333 30,100,1,0.333", "[{1 10 1 0.333} {30 100 1 0.333}]"},
+		{"1,10,1,0.333 30,100,1,0.333", "", "[{1 10 1 0.333} {30 100 1 0.333}]"},
+		{"1,10,1,0.333 20,30,1,0.333", "1,50,1,0.333", "[{1 10 1 0.666} {10 20 1 0.333} {20 30 1 0.666} {30 50 1 0.333}]"},
+		{"10,20,1,0.333 30,40,1,0.333", "20,30,1,0.333 35,45,1,0.333", "[{10 20 1 0.333} {20 30 1 0.333} {30 35 1 0.333} {35 40 1 0.666} {40 45 1 0.333}]"},
+		{"20,30,1,0.333 35,45,1,0.333", "10,20,1,0.333 30,40,1,0.333", "[{10 20 1 0.333} {20 30 1 0.333} {30 35 1 0.333} {35 40 1 0.666} {40 45 1 0.333}]"},
+		{"30,40,1,0.333 40,50,1,0.333", "10,35,1,0.333 38,45,1,0.333 48,60,1,0.333", "[{10 30 1 0.333} {30 35 1 0.666} {35 38 1 0.333} {38 40 1 0.666} {40 45 1 0.666} {45 48 1 0.333} {48 50 1 0.666} {50 60 1 0.333}]"},
+		{"10,22,1,0.333", "15,22,1,0.333 30,40,1,0.333", "[{10 15 1 0.333} {15 22 1 0.666} {30 40 1 0.333}]"},
+		{"10,22,1,0.333", "15,22,1,0.333", "[{10 15 1 0.333} {15 22 1 0.666}]"},
+	}
+
+	for _, x := range tests {
+		a, b := parseIntervals(x.a), parseIntervals(x.b)
+		var res Intervals
+		res.MergeNodes(a, b)
+		out := fmt.Sprintf("%v", res)
+		if out != x.expected {
+			t.Errorf("Expected %v, got %v", x.expected, out)
 		}
 	}
 }

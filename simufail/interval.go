@@ -99,15 +99,16 @@ func (s Intervals) FindNonFailureTime(r *rand.Rand) uint32 {
 }
 
 // Normalize puts the list of intervals in canonical form
-func (sp *Intervals) Normalize() {
-
-	s := *sp
+func (sp *Intervals) Normalize(sorted bool) {
 
 	// Sort intervals
+	s := *sp
 	if len(s) == 0 {
 		return
 	}
-	sort.Sort(s)
+	if !sorted {
+		sort.Sort(s)
+	}
 
 	// Merge contiguous or overlapping intervals
 	for i := 1; i < len(s); {
@@ -139,6 +140,68 @@ func (s Intervals) Equal(other Intervals) bool {
 		}
 	}
 	return true
+}
+
+// MergeNodes merges two interval slices associated to two nodes of the same zone
+func (s *Intervals) MergeNodes(a, b Intervals) {
+	s.merge(a, b, func(x, y Interval) Interval {
+		return Interval{x.beg, x.end, x.cnt, x.ratio + y.ratio}
+	})
+}
+
+// MergeNodes merges two interval slices associated to two zones of the same cluster
+func (s *Intervals) MergeZones(a, b Intervals) {
+	s.merge(a, b, func(x, y Interval) Interval {
+		return Interval{x.beg, x.end, x.cnt + y.cnt, x.ratio * y.ratio}
+	})
+}
+
+// merge applies the generic merge algorithm of two interval slices.
+// The two slices must be sorted.
+func (s *Intervals) merge(a, b Intervals, gen func(x, y Interval) Interval) {
+	s.Reset()
+	i, j := 0, 0
+	var x Interval
+	for i < len(a) && j < len(b) {
+		ab, ae, bb, be := a[i].beg, a[i].end, b[j].beg, b[j].end
+		switch {
+		case ae <= bb:
+			*s = append(*s, a[i])
+			i++
+		case be <= ab:
+			*s = append(*s, b[j])
+			j++
+		case ab == bb:
+			switch {
+			case ae == be:
+				*s = append(*s, gen(a[i], b[j]))
+				i++
+				j++
+			case ae < be:
+				*s = append(*s, gen(a[i], b[j]))
+				b[j].beg = ae
+				i++
+			default:
+				*s = append(*s, gen(b[j], a[i]))
+				a[i].beg = be
+				j++
+			}
+		case ab < bb:
+			x = a[i]
+			x.end, a[i].beg = bb, bb
+			*s = append(*s, x)
+		default:
+			x = b[j]
+			x.end, b[j].beg = ab, ab
+			*s = append(*s, x)
+		}
+	}
+	switch {
+	case i < len(a):
+		*s = append(*s, a[i:]...)
+	case j < len(b):
+		*s = append(*s, b[j:]...)
+	}
 }
 
 // Implements sort interface.
