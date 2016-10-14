@@ -6,33 +6,38 @@ import (
 	"math/rand"
 )
 
-var flagNbIter = flag.Int("n", 10000, "Number of iterations")
+var (
+	flagNbIter = flag.Int("n", 10000, "Number of iterations")
+	flagSeed   = flag.Int("s", 0, "Seed for random numbers")
+)
 
 type Simulation struct {
-	nNodes uint16
-	nZones uint16
+	ay          *AvailabilityYear
+	r2, r2x, r3 Result
 }
 
 func NewSimulation() *Simulation {
-	return &Simulation{nNodes: 9, nZones: 3}
+	return &Simulation{ay: NewAvailabilityYear()}
 }
 
 func (s *Simulation) RunOnce() {
 
-	ay := NewAvailabilityYear()
-	r := rand.New(rand.NewSource(0))
-	for i := 0; i < 10; i++ {
-		fmt.Println("---------------")
-		ay.Reset()
-		ay.Build(r)
-		ay.Simulate()
+	r := rand.New(rand.NewSource(int64(*flagSeed)))
+	for i := 0; i < *flagNbIter; i++ {
+		s.ay.Reset()
+		s.ay.Build(r)
+		s.ay.Simulate()
+		s.ay.Evaluate()
+		s.r2.Update(s.ay.r2)
+		s.r2x.Update(s.ay.r2x)
+		s.r3.Update(s.ay.r3)
 	}
+	fmt.Println(s.r2, s.r2x, s.r3)
 }
 
 func main() {
 
 	flag.Parse()
-	fmt.Println(*flagNbIter)
 
 	s := NewSimulation()
 	s.RunOnce()

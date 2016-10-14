@@ -2,36 +2,26 @@ package main
 
 import "math/rand"
 
+type Result struct {
+	n, dur int
+	rat    float32
+}
+
+func (r *Result) Update(other Result) {
+	r.n += other.n
+	r.dur += other.dur
+	r.rat += other.rat
+}
+
 // AvailabilityYear represents an availability for a given year.
 type AvailabilityYear struct {
 	nodes   []Intervals
 	zones   []Intervals
 	cluster Intervals
 	tmp     Intervals
+	r2, r3  Result
+	r2x     Result
 }
-
-// Each node suffers from N_REBOOTS unexpected reboot a year, resulting in MTBR_REBOOT secs outage per node.
-// Each node has a PROB_HW_FAILURE% chance a year to get a hardware failure resulting in MTBR_HW_FAILURE secs outage.
-// Each availability zone is brought down N_ZONE_SHUTDOWNS times a year resulting in MTBR_ZONE_SHUTDOWN secs outage per zone.
-// The cluster is upgraded N_ROLLING_UPGRADES times a year using rolling upgrade, resulting in MTBR_ROLLING_UPGRADE secs outage
-// per node in sequence, separated by IDLE_ROLLING_UPGRADE secs idle periods.
-// Availability zone shutdowns and couchbase rolling upgrades are scheduled events, so:
-//   - they are mutually exclusive
-//   - they are not scheduled when there is already a node down for any reason
-const (
-	N_NODES              = 12
-	N_ZONES              = 3
-	N_ROLLING_UPGRADES   = 2
-	MTBR_ROLLING_UPGRADE = 2 * 60
-	IDLE_ROLLING_UPGRADE = 30
-	N_ZONE_SHUTDOWNS     = 1
-	MTBR_ZONE_SHUTDOWN   = 3 * 3600
-	N_REBOOTS            = 2
-	MTBR_REBOOT          = 5 * 60
-	PROB_HW_FAILURE      = 6
-	MTBR_HW_FAILURE      = 3 * 24 * 3600
-	ZONE_SIZE            = N_NODES / N_ZONES
-)
 
 // NewAvailabilityYear creates a new object representing a full year of availability.
 func NewAvailabilityYear() *AvailabilityYear {
@@ -53,14 +43,15 @@ func NewAvailabilityYear() *AvailabilityYear {
 
 // Reset re-initializes the object.
 func (ay *AvailabilityYear) Reset() {
-	for i := 0; i < N_NODES; i++ {
+	for i := range ay.nodes {
 		ay.nodes[i].Reset()
 	}
-	for i := 0; i < N_ZONES; i++ {
+	for i := range ay.zones {
 		ay.zones[i].Reset()
 	}
 	ay.cluster.Reset()
 	ay.tmp.Reset()
+	ay.r2, ay.r3, ay.r2x = Result{}, Result{}, Result{}
 }
 
 // Build generates a simulation.
@@ -74,19 +65,36 @@ func (ay *AvailabilityYear) Build(r *rand.Rand) {
 
 // BuildNodes populates the initial node views.
 func (ay *AvailabilityYear) buildNodes(r *rand.Rand) {
+
 	// Each node suffers from N_REBOOTS unexpected reboot a year, resulting in MTBR_REBOOT secs outage per node.
 	// Each node has a PROB_HW_FAILURE% chance a year to get a hardware failure resulting in MTBR_HW_FAILURE secs outage.
-	for i := 0; i < N_NODES; i++ {
+	for i := range ay.nodes {
 		ay.nodes[i].AddFailures(N_REBOOTS, r, MTBR_REBOOT)
 		if r.Intn(100) < PROB_HW_FAILURE {
 			ay.nodes[i].AddFailures(1, r, MTBR_HW_FAILURE)
 		}
+	}
+
+	// Each availability zone has a PROB_NET_FAILURE% chance a year to suffer from a network issue
+	// making it unavailable for MTBR_NET_FAILURE secs.
+	for iZ := 0; iZ < N_ZONES; iZ++ {
+		if r.Intn(100) < PROB_NET_FAILURE {
+			t := uint32(r.Int31n(MAXSECS))
+			for i := 0; i < ZONE_SIZE; i++ {
+				ay.nodes[iZ*ZONE_SIZE+i].AddFailure(t, MTBR_NET_FAILURE, false)
+			}
+		}
+	}
+
+	// Build the global view
+	for i := range ay.nodes {
 		ay.cluster = append(ay.cluster, ay.nodes[i]...)
 	}
 }
 
 // BuildGlobalEvents generate global events such as zone shutdown and rolling upgrades.
 func (ay *AvailabilityYear) buildGlobalEvents(r *rand.Rand) {
+
 	// Each availability zone is brought down N_ZONE_SHUTDOWNS times a year resulting in MTBR_ZONE_SHUTDOWN secs outage per zone.
 	// The cluster is upgraded N_ROLLING_UPGRADES times a year using rolling upgrade, resulting in MTBR_ROLLING_UPGRADE secs outage
 	// per node in sequence, separated by IDLE_ROLLING_UPGRADE secs idle periods.
@@ -114,6 +122,7 @@ func (ay *AvailabilityYear) buildGlobalEvents(r *rand.Rand) {
 
 // BuildNodes update the node views according to the global events.
 func (ay *AvailabilityYear) retrofitGlobalEvents(r *rand.Rand) {
+
 	// Retrofit global events in the node views.
 	idx := 0
 	for i := 0; i < N_ROLLING_UPGRADES; i++ {
@@ -124,16 +133,18 @@ func (ay *AvailabilityYear) retrofitGlobalEvents(r *rand.Rand) {
 		}
 		idx++
 	}
-	for i := 0; i < N_ZONE_SHUTDOWNS*N_ZONES; i++ {
-		tZS := ay.tmp[idx].beg
-		for n := 0; n < ZONE_SIZE; n++ {
-			ay.nodes[n+N_ZONES*(i%N_ZONES)].AddFailure(tZS, MTBR_ZONE_SHUTDOWN, false)
+	for iS := 0; iS < N_ZONE_SHUTDOWNS; iS++ {
+		for iZ := 0; iZ < N_ZONES; iZ++ {
+			tZS := ay.tmp[idx].beg
+			for n := 0; n < ZONE_SIZE; n++ {
+				ay.nodes[iZ*ZONE_SIZE+n].AddFailure(tZS, MTBR_ZONE_SHUTDOWN, false)
+			}
+			idx++
 		}
-		idx++
 	}
 }
 
-// Simulate calculate the result of the simulation
+// Simulate calculate the result of the simulation.
 func (ay *AvailabilityYear) Simulate() {
 	ay.normalize()
 	ay.simulateZones()
@@ -142,7 +153,7 @@ func (ay *AvailabilityYear) Simulate() {
 
 // BuildNodes update the node views according to the global events.
 func (ay *AvailabilityYear) normalize() {
-	for i := 0; i < N_NODES; i++ {
+	for i := range ay.nodes {
 		ay.nodes[i].Normalize(false)
 		for j := range ay.nodes[i] {
 			p := &(ay.nodes[i][j])
@@ -152,11 +163,10 @@ func (ay *AvailabilityYear) normalize() {
 	}
 }
 
-// simulateZone calculates the result of the simulation for the zones
+// simulateZone calculates the result of the simulation for the zones.
 func (ay *AvailabilityYear) simulateZones() {
-	for iZ := 0; iZ < N_ZONES; iZ++ {
+	for iZ := range ay.zones {
 		nodes := ay.nodes[iZ*ZONE_SIZE : (iZ+1)*ZONE_SIZE]
-		//fmt.Println("nodes", nodes)
 		z := ay.zones[iZ]
 		z = append(z, nodes[0]...)
 		for i := 1; i < len(nodes); i++ {
@@ -164,11 +174,10 @@ func (ay *AvailabilityYear) simulateZones() {
 			z, ay.tmp = ay.tmp, z
 		}
 		ay.zones[iZ] = z
-		//fmt.Println("zone", z)
 	}
 }
 
-// simulateCluster calculates the result of the simulation for the cluster
+// simulateCluster calculates the result of the simulation for the cluster.
 func (ay *AvailabilityYear) simulateCluster() {
 	c := ay.cluster
 	c = append(c, ay.zones[0]...)
@@ -177,5 +186,25 @@ func (ay *AvailabilityYear) simulateCluster() {
 		c, ay.tmp = ay.tmp, c
 	}
 	ay.cluster = c
-	//fmt.Println("cluster", c)
+}
+
+// Evaluate analyzes the result of the simulation.
+func (ay *AvailabilityYear) Evaluate() {
+	for i, x := range ay.cluster {
+		switch x.cnt {
+		case 2:
+			ay.r2.n++
+			ay.r2.dur += int(x.end - x.beg)
+			ay.r2.rat += x.ratio
+			if i == 0 || ay.cluster[i-1].end != x.beg || ay.cluster[i-1].cnt < 2 {
+				ay.r2x.n++
+				ay.r2x.dur += int(x.end - x.beg)
+				ay.r2x.rat += x.ratio
+			}
+		case 3:
+			ay.r3.n++
+			ay.r3.dur += int(x.end - x.beg)
+			ay.r3.rat += x.ratio
+		}
+	}
 }
