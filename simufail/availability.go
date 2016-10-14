@@ -19,7 +19,7 @@ type AvailabilityYear struct {
 //   - they are mutually exclusive
 //   - they are not scheduled when there is already a node down for any reason
 const (
-	N_NODES              = 9
+	N_NODES              = 12
 	N_ZONES              = 3
 	N_ROLLING_UPGRADES   = 2
 	MTBR_ROLLING_UPGRADE = 2 * 60
@@ -177,5 +177,5 @@ func (ay *AvailabilityYear) simulateCluster() {
 		c, ay.tmp = ay.tmp, c
 	}
 	ay.cluster = c
-	//fmt.Println(c)
+	//fmt.Println("cluster", c)
 }
