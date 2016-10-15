@@ -2,25 +2,13 @@ package main
 
 import "math/rand"
 
-type Result struct {
-	n, dur int
-	rat    float32
-}
-
-func (r *Result) Update(other Result) {
-	r.n += other.n
-	r.dur += other.dur
-	r.rat += other.rat
-}
-
 // AvailabilityYear represents an availability for a given year.
 type AvailabilityYear struct {
 	nodes   []Intervals
 	zones   []Intervals
 	cluster Intervals
 	tmp     Intervals
-	r2, r3  Result
-	r2x     Result
+	res     Result
 }
 
 // NewAvailabilityYear creates a new object representing a full year of availability.
@@ -51,7 +39,7 @@ func (ay *AvailabilityYear) Reset() {
 	}
 	ay.cluster.Reset()
 	ay.tmp.Reset()
-	ay.r2, ay.r3, ay.r2x = Result{}, Result{}, Result{}
+	ay.res.Reset()
 }
 
 // Build generates a simulation.
@@ -59,8 +47,6 @@ func (ay *AvailabilityYear) Build(r *rand.Rand) {
 	ay.buildNodes(r)
 	ay.buildGlobalEvents(r)
 	ay.retrofitGlobalEvents(r)
-	ay.tmp.Reset()
-	ay.cluster.Reset()
 }
 
 // BuildNodes populates the initial node views.
@@ -146,6 +132,8 @@ func (ay *AvailabilityYear) retrofitGlobalEvents(r *rand.Rand) {
 
 // Simulate calculate the result of the simulation.
 func (ay *AvailabilityYear) Simulate() {
+	ay.tmp.Reset()
+	ay.cluster.Reset()
 	ay.normalize()
 	ay.simulateZones()
 	ay.simulateCluster()
@@ -190,21 +178,19 @@ func (ay *AvailabilityYear) simulateCluster() {
 
 // Evaluate analyzes the result of the simulation.
 func (ay *AvailabilityYear) Evaluate() {
+	ay.res.n++
+	r2 := &(ay.res.r2)
+	r2x := &(ay.res.r2x)
+	r3 := &(ay.res.r3)
 	for i, x := range ay.cluster {
 		switch x.cnt {
 		case 2:
-			ay.r2.n++
-			ay.r2.dur += int(x.end - x.beg)
-			ay.r2.rat += x.ratio
+			r2.Update(x)
 			if i == 0 || ay.cluster[i-1].end != x.beg || ay.cluster[i-1].cnt < 2 {
-				ay.r2x.n++
-				ay.r2x.dur += int(x.end - x.beg)
-				ay.r2x.rat += x.ratio
+				r2x.Update(x)
 			}
 		case 3:
-			ay.r3.n++
-			ay.r3.dur += int(x.end - x.beg)
-			ay.r3.rat += x.ratio
+			r3.Update(x)
 		}
 	}
 }
