@@ -179,18 +179,13 @@ func (ay *AvailabilityYear) simulateCluster() {
 // Evaluate analyzes the result of the simulation.
 func (ay *AvailabilityYear) Evaluate() {
 	ay.res.n++
-	r2 := &(ay.res.r2)
-	r2x := &(ay.res.r2x)
-	r3 := &(ay.res.r3)
 	for i, x := range ay.cluster {
-		switch x.cnt {
-		case 2:
-			r2.Update(x)
-			if i == 0 || ay.cluster[i-1].end != x.beg || ay.cluster[i-1].cnt < 2 {
-				r2x.Update(x)
+		if x.cnt > 0 {
+			n := x.cnt - 1
+			ay.res.outages[n].Update(x)
+			if i == 0 || ay.cluster[i-1].end != x.beg || ay.cluster[i-1].cnt < x.cnt {
+				ay.res.failures[n].Update(x)
 			}
-		case 3:
-			r3.Update(x)
 		}
 	}
 }

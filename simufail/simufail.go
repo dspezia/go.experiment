@@ -52,14 +52,15 @@ func main() {
 	flag.Parse()
 	fmt.Printf("Starting %d iterations over %d threads with %d batch size\n", *flagNbIter, *flagParallel, *flagBatch)
 
-	input := make(chan int, 16)
-	done := make(chan Result)
+	input := make(chan int, *flagParallel*2)
+	done := make(chan Result, *flagParallel*2)
 	for i := 0; i < *flagParallel; i++ {
 		go handleWorker(i, input, done)
 	}
 
 	for i := 0; i < *flagNbIter; i++ {
 		input <- i
+		fmt.Printf("Iteration %d\r", i)
 	}
 	close(input)
 
