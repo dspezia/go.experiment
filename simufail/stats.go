@@ -3,7 +3,7 @@ package main
 // Statistic contains the metric values associated to a single event.
 type Statistic struct {
 	n, dur int
-	rat    float32
+	rat    float64
 }
 
 // Aggregate sums statistics
@@ -20,7 +20,7 @@ func (s *Statistic) Aggregate(other *Statistic) {
 func (s *Statistic) Update(x Interval) {
 	s.n++
 	s.dur += int(x.end - x.beg)
-	s.rat += x.ratio
+	s.rat += float64(x.ratio)
 }
 
 // Result contains the result of a simulation run.
@@ -50,5 +50,43 @@ func (r *Result) Aggregate(other *Result) {
 	}
 	for i := range r.failures {
 		r.failures[i].Aggregate(&(other.failures[i]))
+	}
+}
+
+// FinalResult contains aggregated results with probabilites.
+type FinalResult struct {
+	Result
+	proba [N_ZONES][N_HISTO]int
+}
+
+// Update aggregates statistics and maintain probability counters.
+func (r *FinalResult) Update(other *Result) {
+
+	r.Result.Aggregate(other)
+
+	for i := 0; i < N_ZONES; i++ {
+		n := other.failures[i].n
+		if i == 0 {
+			// Scale change since there are numerous events in this case
+			n /= 10
+		}
+		if n > 0 {
+			if n >= N_HISTO {
+				n = 0
+			}
+			r.proba[i][n]++
+		}
+	}
+}
+
+// Aggregate sums results from other runs
+func (r *FinalResult) Aggregate(other *FinalResult) {
+
+	r.Result.Aggregate(&(other.Result))
+
+	for i := range r.proba {
+		for j := range r.proba[i] {
+			r.proba[i][j] += other.proba[i][j]
+		}
 	}
 }

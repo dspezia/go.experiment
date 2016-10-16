@@ -15,6 +15,7 @@ package main
 const (
 	N_NODES              = 12
 	N_ZONES              = 3
+	N_HISTO              = 11
 	N_ROLLING_UPGRADES   = 2
 	MTBR_ROLLING_UPGRADE = 2 * 60
 	IDLE_ROLLING_UPGRADE = 30

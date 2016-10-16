@@ -18,7 +18,7 @@ type Simulator struct {
 	id  int
 	r   *rand.Rand
 	ay  *AvailabilityYear
-	res Result
+	res FinalResult
 }
 
 func NewSimulator(n int) *Simulator {
@@ -35,11 +35,11 @@ func (s *Simulator) Run(n int) {
 		s.ay.Build(s.r)
 		s.ay.Simulate()
 		s.ay.Evaluate()
-		s.res.Aggregate(&(s.ay.res))
+		s.res.Update(&(s.ay.res))
 	}
 }
 
-func handleWorker(n int, input chan int, done chan Result) {
+func handleWorker(n int, input chan int, done chan FinalResult) {
 	simu := NewSimulator(n)
 	for x := range input {
 		simu.Run(x)
@@ -53,7 +53,7 @@ func main() {
 	fmt.Printf("Starting %d iterations over %d threads with %d batch size\n", *flagNbIter, *flagParallel, *flagBatch)
 
 	input := make(chan int, *flagParallel*2)
-	done := make(chan Result, *flagParallel*2)
+	done := make(chan FinalResult, *flagParallel*2)
 	for i := 0; i < *flagParallel; i++ {
 		go handleWorker(i, input, done)
 	}
@@ -64,7 +64,7 @@ func main() {
 	}
 	close(input)
 
-	var result Result
+	var result FinalResult
 	for i := 0; i < *flagParallel; i++ {
 		r := <-done
 		result.Aggregate(&r)
