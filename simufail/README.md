@@ -19,7 +19,7 @@ Build it, and run the simufail binary.
 
 ## Cluster topology and failure events
 
-We consider a cluster with 3 replicas (i.e. 1 master and 2 slaves) and 3 server groups, with rack awareness.
+We consider a cluster with 3 replicas (i.e. 1 master and 2 slaves per vbucket) and 3 server groups, with rack awareness.
 
 ### Unexpected events:
 
