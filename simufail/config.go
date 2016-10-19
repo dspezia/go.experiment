@@ -15,7 +15,6 @@ package main
 const (
 	N_NODES              = 12
 	N_ZONES              = 3
-	N_HISTO              = 11
 	N_ROLLING_UPGRADES   = 2
 	MTBR_ROLLING_UPGRADE = 2 * 60
 	IDLE_ROLLING_UPGRADE = 30
@@ -28,5 +27,7 @@ const (
 	PROB_HW_FAILURE      = 6
 	MTBR_HW_FAILURE      = 3 * 24 * 3600
 	THROUGHPUT           = 50
-	ZONE_SIZE            = N_NODES / N_ZONES
+
+	ZONE_SIZE = N_NODES / N_ZONES
+	N_HISTO   = 11
 )

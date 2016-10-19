@@ -66,15 +66,19 @@ func (r *FinalResult) Update(other *Result) {
 
 	for i := 0; i < N_ZONES; i++ {
 		n := other.failures[i].n
-		if i == 0 {
-			// Scale change since there are numerous events in this case
-			n /= 10
-		}
 		if n > 0 {
-			if n >= N_HISTO {
-				n = 0
+			if i == 0 {
+				// Just one node failed, an histogram is useless.
+				// Just calculate an average instead.
+				r.proba[i][0]++
+				r.proba[i][1] += n
+			} else {
+				// Two or more node failed, build an histogram.
+				if n >= N_HISTO {
+					n = 0
+				}
+				r.proba[i][n]++
 			}
-			r.proba[i][n]++
 		}
 	}
 }
