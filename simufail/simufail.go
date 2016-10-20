@@ -5,14 +5,17 @@ import (
 	"fmt"
 	"math/rand"
 	"runtime"
+	"time"
 )
 
 var (
 	flagNbIter   = flag.Int("n", 32, "Number of iterations")
 	flagBatch    = flag.Int("b", 100000, "Size of batch")
-	flagSeed     = flag.Int("s", 0, "Seed for random numbers")
+	flagSeed     = flag.Int("s", 1, "Seed for random numbers")
 	flagParallel = flag.Int("p", runtime.NumCPU(), "Parallelism level")
 )
+
+var seed int
 
 type Simulator struct {
 	id  int
@@ -22,9 +25,10 @@ type Simulator struct {
 }
 
 func NewSimulator(n int) *Simulator {
+
 	return &Simulator{
 		id: n,
-		r:  rand.New(rand.NewSource(int64(n*17 + *flagSeed))),
+		r:  rand.New(rand.NewSource(int64(n*17 + seed))),
 		ay: NewAvailabilityYear(),
 	}
 }
@@ -51,6 +55,11 @@ func main() {
 
 	flag.Parse()
 	fmt.Printf("Starting %d iterations over %d threads with %d batch size\n", *flagNbIter, *flagParallel, *flagBatch)
+
+	seed = *flagSeed
+	if seed == 0 {
+		seed = int(time.Now().UnixNano())
+	}
 
 	input := make(chan int, *flagParallel*2)
 	done := make(chan FinalResult, *flagParallel*2)
