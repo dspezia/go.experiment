@@ -186,6 +186,9 @@ func (ay *AvailabilityYear) Evaluate() {
 			if i == 0 || ay.cluster[i-1].end != x.beg || ay.cluster[i-1].cnt < x.cnt {
 				ay.res.failures[n].Update(x)
 			}
+			if x.cnt > 1 || x.ratio > 1.0/float32(ZONE_SIZE) {
+				ay.res.atLeast2.Update(x)
+			}
 		}
 	}
 }

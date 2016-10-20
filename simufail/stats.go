@@ -27,24 +27,20 @@ func (s *Statistic) Update(x Interval) {
 // It can also aggregate results of multiple runs.
 type Result struct {
 	n        int
+	atLeast2 Statistic
 	outages  [N_ZONES]Statistic
 	failures [N_ZONES]Statistic
 }
 
 // Reset zeroes the result object.
 func (r *Result) Reset() {
-	r.n = 0
-	for i := range r.outages {
-		r.outages[i] = Statistic{}
-	}
-	for i := range r.failures {
-		r.failures[i] = Statistic{}
-	}
+	*r = Result{}
 }
 
 // Aggregate sums statistics from other runs.
 func (r *Result) Aggregate(other *Result) {
 	r.n += other.n
+	r.atLeast2.Aggregate(&(other.atLeast2))
 	for i := range r.outages {
 		r.outages[i].Aggregate(&(other.outages[i]))
 	}
@@ -56,6 +52,8 @@ func (r *Result) Aggregate(other *Result) {
 // FinalResult contains aggregated results with probabilites.
 type FinalResult struct {
 	Result
+	z1Cnt int
+	z1Sum int
 	proba [N_ZONES][N_HISTO]int
 }
 
@@ -64,22 +62,32 @@ func (r *FinalResult) Update(other *Result) {
 
 	r.Result.Aggregate(other)
 
-	for i := 0; i < N_ZONES; i++ {
-		n := other.failures[i].n
-		if n > 0 {
-			if i == 0 {
-				// Just one node failed, an histogram is useless.
-				// Just calculate an average instead.
-				r.proba[i][0]++
-				r.proba[i][1] += n
-			} else {
-				// Two or more node failed, build an histogram.
-				if n >= N_HISTO {
-					n = 0
-				}
-				r.proba[i][n]++
-			}
+	// Build an histogram for "at least 2" failures.
+	// Expected zone shutdown are excluded.
+	n := other.atLeast2.n - N_ZONE_SHUTDOWNS*N_ZONES
+	r.calculate(0, n)
+
+	// Node failure in a single zone, an histogram is useless.
+	// Just calculate an average instead.
+	n = other.failures[0].n
+	if n > 0 {
+		r.z1Cnt++
+		r.z1Sum += n
+	}
+
+	// Failures in two or more zones, build an histogram.
+	for i := 1; i < N_ZONES; i++ {
+		n = other.failures[i].n
+		r.calculate(i, n)
+	}
+}
+
+func (r *FinalResult) calculate(i, n int) {
+	if n > 0 {
+		if n >= N_HISTO {
+			n = 0
 		}
+		r.proba[i][n]++
 	}
 }
 
@@ -87,6 +95,9 @@ func (r *FinalResult) Update(other *Result) {
 func (r *FinalResult) Aggregate(other *FinalResult) {
 
 	r.Result.Aggregate(&(other.Result))
+
+	r.z1Cnt += other.z1Cnt
+	r.z1Sum += other.z1Sum
 
 	for i := range r.proba {
 		for j := range r.proba[i] {
