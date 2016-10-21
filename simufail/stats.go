@@ -1,5 +1,7 @@
 package main
 
+import "fmt"
+
 // Statistic contains the metric values associated to a single event.
 type Statistic struct {
 	n, dur int
@@ -104,4 +106,71 @@ func (r *FinalResult) Aggregate(other *FinalResult) {
 			r.proba[i][j] += other.proba[i][j]
 		}
 	}
+}
+
+// Format generates a human-readable output
+func (r *FinalResult) Format(f fmt.State, c rune) {
+
+	//fmt.Fprintln(f, *r)
+
+	fmt.Fprintf(f, "Number of simulations:            %d\n", r.Result.n)
+	fmt.Fprintf(f, "Average node failures per year:   %.2f\n", float64(r.z1Sum)/float64(r.z1Cnt))
+	fmt.Fprintln(f)
+
+	r.displayRangeProb(f, N_ZONES)
+	fmt.Fprintln(f)
+	r.displayRangeProb(f, N_ZONES-1)
+	fmt.Fprintln(f)
+	r.displayRangeProb(f, 1)
+}
+
+func (r *FinalResult) displayRangeProb(f fmt.State, nz int) {
+
+	if nz == 1 {
+		fmt.Fprintf(f, "Failures involving at least 2 nodes\n\n")
+		displayAverages(f, nz, r.Result.atLeast2)
+	} else {
+		fmt.Fprintf(f, "Failures on %d zones\n\n", nz)
+		displayAverages(f, nz, r.Result.outages[nz-1])
+	}
+
+	fmt.Fprintf(f, "\nHistogram of probability\n")
+
+	t := r.proba[nz-1][:]
+	count := float64(r.Result.n)
+	more := true
+
+	for i, x := range t[1:] {
+		if x == 0 {
+			more = false
+			break
+		}
+		fmt.Fprintf(f, "At least %2d occurences:  %8.4f %%\n", i+1, 100.0*float64(sum(i+1, t))/count)
+	}
+	if more && t[0] != 0 {
+		fmt.Fprintf(f, "More occurences:         %8.4f %%\n", 100.0*float64(t[0])/count)
+	}
+}
+
+func displayAverages(f fmt.State, nz int, s Statistic) {
+
+	imp := s.rat / float64(s.n)
+	dur := float64(s.dur) / float64(s.n)
+
+	fmt.Fprintf(f, "Average %% of keys impacted:      %3.4f %%\n", 100.0*imp)
+	fmt.Fprintf(f, "Average duration of the event:   %.0f secs\n", dur)
+
+	if nz == N_ZONES {
+		fmt.Fprintf(f, "Average number of records lost:  %3.4f\n", float64(THROUGHPUT)*imp)
+	} else {
+		fmt.Fprintf(f, "Average number of transactions:  %3.4f\n", float64(THROUGHPUT)*dur*imp)
+	}
+}
+
+func sum(i int, t []int) int {
+	n := t[0]
+	for _, x := range t[i:] {
+		n += x
+	}
+	return n
 }

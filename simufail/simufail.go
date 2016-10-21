@@ -79,6 +79,6 @@ func main() {
 		result.Aggregate(&r)
 	}
 
-	fmt.Println("Result:", result)
-	fmt.Println("Done.")
+	fmt.Println("\nDone\n")
+	fmt.Println(&result)
 }

@@ -188,6 +188,7 @@ func (ay *AvailabilityYear) Evaluate() {
 			}
 			if x.cnt > 1 || x.ratio > 1.0/float32(ZONE_SIZE) {
 				ay.res.atLeast2.Update(x)
+				//fmt.Println(x, x.end-x.beg)
 			}
 		}
 	}
