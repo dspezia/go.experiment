@@ -1,6 +1,11 @@
 package main
 
-import "math/rand"
+import (
+	"fmt"
+	"math/rand"
+)
+
+var debug = false
 
 // AvailabilityYear represents an availability for a given year.
 type AvailabilityYear struct {
@@ -178,6 +183,7 @@ func (ay *AvailabilityYear) simulateCluster() {
 
 // Evaluate analyzes the result of the simulation.
 func (ay *AvailabilityYear) Evaluate() {
+	dumpIt := false
 	ay.res.n++
 	for i, x := range ay.cluster {
 		if x.cnt > 0 {
@@ -188,8 +194,28 @@ func (ay *AvailabilityYear) Evaluate() {
 			}
 			if x.cnt > 1 || x.ratio > 1.0/float32(ZONE_SIZE) {
 				ay.res.atLeast2.Update(x)
-				//fmt.Println(x, x.end-x.beg)
 			}
 		}
+		if debug && (x.cnt > 1 || x.ratio > 0.26) && x.end-x.beg > 4*3600 {
+			dumpIt = true
+			fmt.Println("Warning: ", x, x.end-x.beg)
+		}
 	}
+	if debug && dumpIt {
+		ay.Dump()
+	}
+}
+
+func (ay *AvailabilityYear) Dump() {
+
+	fmt.Println("New dump")
+
+	for i := range ay.nodes {
+		fmt.Println("Node", i, " : ", ay.nodes[i])
+	}
+	for i := range ay.zones {
+		fmt.Println("Zone", i, " : ", ay.zones[i])
+	}
+	fmt.Println("Cluster : ", ay.cluster)
+	fmt.Println("--")
 }
