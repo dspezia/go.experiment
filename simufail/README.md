@@ -41,7 +41,6 @@ Availability zone shutdowns and couchbase rolling upgrades are scheduled events,
 Here are some results for 12-nodes, 9-nodes and 6-nodes clusters distributed over 3 availability zones.
 Generated with:
 
-    N_NODES              = 12
     N_ZONES              = 3
     N_ROLLING_UPGRADES   = 2
     MTBR_ROLLING_UPGRADE = 2 * 60
