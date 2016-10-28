@@ -111,8 +111,6 @@ func (r *FinalResult) Aggregate(other *FinalResult) {
 // Format generates a human-readable output
 func (r *FinalResult) Format(f fmt.State, c rune) {
 
-	//fmt.Fprintln(f, *r)
-
 	fmt.Fprintf(f, "Number of simulations:            %d\n", r.Result.n)
 	fmt.Fprintf(f, "Average node failures per year:   %.2f\n", float64(r.z1Sum)/float64(r.z1Cnt))
 	fmt.Fprintln(f)

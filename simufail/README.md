@@ -95,22 +95,22 @@ Generated with:
 
     Failures involving at least 2 nodes
 
-    Average % of keys impacted:      94.9560 %
-    Average duration of the event:   8861 secs
-    Average number of transactions:  420680.0638
+    Average % of keys impacted:      94.9547 %
+    Average duration of the event:   8860 secs
+    Average number of transactions:  420660.0988
 
     Histogram of probability
-    At least  1 occurences:   65.9787 %
-    At least  2 occurences:   26.4358 %
-    At least  3 occurences:    7.5125 %
-    At least  4 occurences:    1.8742 %
-    At least  5 occurences:    0.4282 %
-    At least  6 occurences:    0.0954 %
-    At least  7 occurences:    0.0269 %
+    At least  1 occurences:   65.9699 %
+    At least  2 occurences:   26.4462 %
+    At least  3 occurences:    7.5117 %
+    At least  4 occurences:    1.8720 %
+    At least  5 occurences:    0.4286 %
+    At least  6 occurences:    0.0955 %
+    At least  7 occurences:    0.0267 %
     At least  8 occurences:    0.0123 %
-    At least  9 occurences:    0.0087 %
-    At least 10 occurences:    0.0067 %
-    More occurences:           0.0052 %
+    At least  9 occurences:    0.0089 %
+    At least 10 occurences:    0.0069 %
+    More occurences:           0.0053 %
 
 ### For a 9 nodes cluster
 
@@ -151,18 +151,18 @@ Generated with:
 
     Failures involving at least 2 nodes
 
-    Average % of keys impacted:      97.3129 %
+    Average % of keys impacted:      97.3137 %
     Average duration of the event:   9053 secs
-    Average number of transactions:  440475.7563
+    Average number of transactions:  440481.4875
 
     Histogram of probability
-    At least  1 occurences:   62.7979 %
-    At least  2 occurences:   22.1077 %
-    At least  3 occurences:    4.9543 %
-    At least  4 occurences:    0.9447 %
-    At least  5 occurences:    0.1721 %
+    At least  1 occurences:   62.7908 %
+    At least  2 occurences:   22.0997 %
+    At least  3 occurences:    4.9570 %
+    At least  4 occurences:    0.9463 %
+    At least  5 occurences:    0.1718 %
     At least  6 occurences:    0.0307 %
-    At least  7 occurences:    0.0092 %
+    At least  7 occurences:    0.0089 %
     At least  8 occurences:    0.0047 %
     At least  9 occurences:    0.0031 %
     At least 10 occurences:    0.0023 %
@@ -203,19 +203,19 @@ Generated with:
 
     Failures involving at least 2 nodes
 
-    Average % of keys impacted:      99.0190 %
-    Average duration of the event:   9203 secs
-    Average number of transactions:  455620.6947
+    Average % of keys impacted:      99.0188 %
+    Average duration of the event:   9202 secs
+    Average number of transactions:  455599.8456
 
     Histogram of probability
-    At least  1 occurences:   60.2276 %
-    At least  2 occurences:   18.7979 %
-    At least  3 occurences:    3.1990 %
-    At least  4 occurences:    0.4184 %
-    At least  5 occurences:    0.0588 %
+    At least  1 occurences:   60.2306 %
+    At least  2 occurences:   18.8004 %
+    At least  3 occurences:    3.2077 %
+    At least  4 occurences:    0.4206 %
+    At least  5 occurences:    0.0594 %
     At least  6 occurences:    0.0077 %
-    At least  7 occurences:    0.0023 %
+    At least  7 occurences:    0.0022 %
     At least  8 occurences:    0.0013 %
-    At least  9 occurences:    0.0009 %
+    At least  9 occurences:    0.0008 %
     At least 10 occurences:    0.0003 %
     More occurences:           0.0001 %

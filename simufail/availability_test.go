@@ -125,3 +125,24 @@ func TestSimulation(t *testing.T) {
 		}
 	}
 }
+
+func TestAlmostEqual(t *testing.T) {
+	tests := []struct {
+		a, b     float32
+		expected bool
+	}{
+		{0.1, 0.1, true},
+		{0.1, 0.2, false},
+		{0.001, 0.001, true},
+		{0.3, 1.0 / 3.0, true},
+		{0.3333333333333, 1.0 / 3.0, true},
+	}
+	for _, x := range tests {
+		if b := almostEqual(x.a, x.b); b != x.expected {
+			t.Errorf("Expected %v; got %v for %v", x.expected, b, x)
+		}
+		if b := almostEqual(x.b, x.a); b != x.expected {
+			t.Errorf("Expected %v; got %v for rev(%v)", x.expected, b, x)
+		}
+	}
+}

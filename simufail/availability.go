@@ -192,18 +192,27 @@ func (ay *AvailabilityYear) Evaluate() {
 			if i == 0 || ay.cluster[i-1].end != x.beg || ay.cluster[i-1].cnt < x.cnt {
 				ay.res.failures[n].Update(x)
 			}
-			if x.cnt > 1 || x.ratio > 1.0/float32(ZONE_SIZE) {
+			if x.cnt > 1 || !almostEqual(x.ratio, 1.0/float32(ZONE_SIZE)) {
 				ay.res.atLeast2.Update(x)
+				if debug {
+					dumpIt = true
+					fmt.Println("Warning: ", x, x.end-x.beg)
+				}
 			}
-		}
-		if debug && (x.cnt > 1 || x.ratio > 0.26) && x.end-x.beg > 4*3600 {
-			dumpIt = true
-			fmt.Println("Warning: ", x, x.end-x.beg)
 		}
 	}
 	if debug && dumpIt {
 		ay.Dump()
 	}
+}
+
+func almostEqual(a, b float32) bool {
+	// Note: this assume normalized numbers between 0 and 1
+	diff := b - a
+	if diff < 0 {
+		diff = -diff
+	}
+	return diff < float32(1.0E-5)
 }
 
 func (ay *AvailabilityYear) Dump() {
